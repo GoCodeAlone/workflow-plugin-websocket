@@ -40,8 +40,29 @@ func (p *wsPlugin) CreateModule(typeName, name string, config map[string]any) (s
 	switch typeName {
 	case "ws.server":
 		return newWSServerModule(name, config)
+	case "websocket":
+		// Trigger modules are created via CreateModule by the host's TriggerFactories.
+		// No callback is available in this path; the trigger fires via the global handler.
+		return newWSTrigger(config, nil)
 	default:
 		return nil, fmt.Errorf("unknown module type %q", typeName)
+	}
+}
+
+func (p *wsPlugin) TriggerTypes() []string {
+	return []string{"websocket"}
+}
+
+func (p *wsPlugin) CreateTrigger(typeName string, config map[string]any, cb sdk.TriggerCallback) (sdk.TriggerInstance, error) {
+	switch typeName {
+	case "websocket":
+		inst, err := newWSTrigger(config, cb)
+		if err != nil {
+			return nil, err
+		}
+		return inst.(*wsTrigger), nil
+	default:
+		return nil, fmt.Errorf("unknown trigger type %q", typeName)
 	}
 }
 

@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 
-	"github.com/gorilla/websocket"
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
 )
 
@@ -23,12 +22,7 @@ func (s *wsCloseStep) Execute(ctx context.Context, triggerData map[string]any,
 	}
 
 	connID, _ := current["connectionId"].(string)
-	code := websocket.CloseNormalClosure
-	if v, ok := current["code"].(float64); ok {
-		code = int(v)
-	}
-	reason, _ := current["reason"].(string)
 
-	h.closeConnection(connID, code, reason)
-	return &sdk.StepResult{Output: map[string]any{"closed": true}}, nil
+	closed := h.closeConnection(connID)
+	return &sdk.StepResult{Output: map[string]any{"closed": closed}}, nil
 }

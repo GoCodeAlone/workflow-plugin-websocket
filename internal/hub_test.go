@@ -8,6 +8,7 @@ import (
 func TestHub_RegisterUnregister(t *testing.T) {
 	h := newHub()
 	go h.run()
+	t.Cleanup(func() { h.stop() })
 
 	mockConn := &connection{id: "conn-1", send: make(chan []byte, 256)}
 	h.register <- mockConn
@@ -21,6 +22,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 		if exists {
 			break
 		}
+		time.Sleep(time.Millisecond)
 	}
 
 	h.mu.RLock()
@@ -40,6 +42,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 		if !exists {
 			break
 		}
+		time.Sleep(time.Millisecond)
 	}
 
 	h.mu.RLock()
@@ -53,6 +56,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 func TestHub_RoomJoinLeave(t *testing.T) {
 	h := newHub()
 	go h.run()
+	t.Cleanup(func() { h.stop() })
 
 	mockConn := &connection{id: "conn-1", send: make(chan []byte, 256)}
 	h.register <- mockConn
@@ -66,6 +70,7 @@ func TestHub_RoomJoinLeave(t *testing.T) {
 		if ok {
 			break
 		}
+		time.Sleep(time.Millisecond)
 	}
 
 	h.joinRoom("conn-1", "game-room-1")
@@ -86,6 +91,7 @@ func TestHub_RoomJoinLeave(t *testing.T) {
 func TestHub_Broadcast(t *testing.T) {
 	h := newHub()
 	go h.run()
+	t.Cleanup(func() { h.stop() })
 
 	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
 	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
@@ -102,6 +108,7 @@ func TestHub_Broadcast(t *testing.T) {
 		if ok1 && ok2 {
 			break
 		}
+		time.Sleep(time.Millisecond)
 	}
 
 	h.joinRoom("conn-1", "room-a")
@@ -119,6 +126,7 @@ func TestHub_Broadcast(t *testing.T) {
 func TestHub_BroadcastExclude(t *testing.T) {
 	h := newHub()
 	go h.run()
+	t.Cleanup(func() { h.stop() })
 
 	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
 	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
@@ -135,6 +143,7 @@ func TestHub_BroadcastExclude(t *testing.T) {
 		if ok1 && ok2 {
 			break
 		}
+		time.Sleep(time.Millisecond)
 	}
 
 	h.joinRoom("conn-1", "room-a")

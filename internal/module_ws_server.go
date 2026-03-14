@@ -94,6 +94,19 @@ func (m *wsServerModule) Stop(ctx context.Context) error {
 		globalHub = nil
 	}
 	globalHubMu.Unlock()
+
+	// Close all active connections gracefully (triggers WebSocket close frames via writePump).
+	m.hub.mu.RLock()
+	conns := make([]*connection, 0, len(m.hub.connections))
+	for _, c := range m.hub.connections {
+		conns = append(conns, c)
+	}
+	m.hub.mu.RUnlock()
+	for _, c := range conns {
+		c.close()
+	}
+
+	m.hub.stop()
 	return nil
 }
 
@@ -124,7 +137,12 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	m.hub.register <- conn
 	go conn.writePump()
-	go conn.readPump(m.onMessage)
+	go conn.readPump(func(connID string, msg []byte) {
+		callGlobalWSMessageHandler(connID, msg)
+		if m.onMessage != nil {
+			m.onMessage(connID, msg)
+		}
+	})
 }
 
 // SetMessageHandler allows the trigger system to receive incoming WS messages.

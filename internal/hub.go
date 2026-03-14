@@ -3,8 +3,6 @@ package internal
 import (
 	"sync"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 type hub struct {
@@ -13,6 +11,7 @@ type hub struct {
 	connRooms      map[string]map[string]bool // connID -> set of rooms
 	register       chan *connection
 	unregister     chan *connection
+	done           chan struct{}
 	mu             sync.RWMutex
 	maxMessageSize int64
 	pingPeriod     time.Duration
@@ -26,6 +25,7 @@ func newHub() *hub {
 		connRooms:      make(map[string]map[string]bool),
 		register:       make(chan *connection),
 		unregister:     make(chan *connection),
+		done:           make(chan struct{}),
 		maxMessageSize: 64 * 1024, // 64KB default
 		pingPeriod:     30 * time.Second,
 		pongWait:       60 * time.Second,
@@ -35,6 +35,9 @@ func newHub() *hub {
 func (h *hub) run() {
 	for {
 		select {
+		case <-h.done:
+			return
+
 		case conn := <-h.register:
 			h.mu.Lock()
 			h.connections[conn.id] = conn
@@ -59,16 +62,27 @@ func (h *hub) run() {
 	}
 }
 
-func (h *hub) joinRoom(connID, room string) {
+// stop signals the hub's run loop to exit.
+func (h *hub) stop() {
+	close(h.done)
+}
+
+func (h *hub) joinRoom(connID, room string) bool {
+	if connID == "" || room == "" {
+		return false
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	// Only join if the connection is actually registered — prevents ghost members.
+	if _, ok := h.connRooms[connID]; !ok {
+		return false
+	}
 	if _, ok := h.rooms[room]; !ok {
 		h.rooms[room] = make(map[string]bool)
 	}
 	h.rooms[room][connID] = true
-	if _, ok := h.connRooms[connID]; ok {
-		h.connRooms[connID][room] = true
-	}
+	h.connRooms[connID][room] = true
+	return true
 }
 
 func (h *hub) leaveRoom(connID, room string) {
@@ -99,13 +113,21 @@ func (h *hub) roomMembers(room string) []string {
 	return result
 }
 
-func (h *hub) sendTo(connID string, msg []byte) bool {
+// sendTo delivers msg to a connection. Returns false if the connection is gone
+// or the send buffer is full. Uses recover to guard against send-on-closed-channel
+// when a connection closes concurrently with a send attempt.
+func (h *hub) sendTo(connID string, msg []byte) (sent bool) {
 	h.mu.RLock()
 	conn, ok := h.connections[connID]
 	h.mu.RUnlock()
 	if !ok {
 		return false
 	}
+	defer func() {
+		if recover() != nil {
+			sent = false
+		}
+	}()
 	select {
 	case conn.send <- msg:
 		return true
@@ -150,13 +172,16 @@ func (h *hub) broadcastAll(msg []byte, exclude string) {
 	}
 }
 
-func (h *hub) closeConnection(connID string, code int, reason string) {
+// closeConnection closes a connection by draining its send channel, which
+// causes writePump to send a WebSocket close frame and exit cleanly.
+// Returns false if the connection does not exist.
+func (h *hub) closeConnection(connID string) bool {
 	h.mu.RLock()
 	conn, ok := h.connections[connID]
 	h.mu.RUnlock()
-	if ok {
-		conn.conn.WriteMessage(websocket.CloseMessage,
-			websocket.FormatCloseMessage(code, reason))
-		h.unregister <- conn
+	if !ok {
+		return false
 	}
+	conn.close()
+	return true
 }
