@@ -1,0 +1,12 @@
+# Compiled binaries
+workflow-plugin-websocket
+workflow-plugin-websocket.exe
+
+# Build output
+dist/
+
+# Test cache
+*.test
+
+# OS
+.DS_Store

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 func setupTestHub(t *testing.T) (*hub, func()) {
@@ -25,7 +26,7 @@ func setupTestHub(t *testing.T) (*hub, func()) {
 
 func waitForConns(t *testing.T, h *hub, ids ...string) {
 	t.Helper()
-	deadline := make(chan struct{})
+	ready := make(chan struct{})
 	go func() {
 		for {
 			h.mu.RLock()
@@ -37,12 +38,16 @@ func waitForConns(t *testing.T, h *hub, ids ...string) {
 			}
 			h.mu.RUnlock()
 			if found == len(ids) {
-				close(deadline)
+				close(ready)
 				return
 			}
 		}
 	}()
-	<-deadline
+	select {
+	case <-ready:
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for connections %v to register", ids)
+	}
 }
 
 func TestWSSendStep(t *testing.T) {
