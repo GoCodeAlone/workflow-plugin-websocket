@@ -24,7 +24,7 @@ func newHub() *hub {
 		rooms:          make(map[string]map[string]bool),
 		connRooms:      make(map[string]map[string]bool),
 		register:       make(chan *connection),
-		unregister:     make(chan *connection),
+		unregister:     make(chan *connection, 256),
 		done:           make(chan struct{}),
 		maxMessageSize: 64 * 1024, // 64KB default
 		pingPeriod:     30 * time.Second,
