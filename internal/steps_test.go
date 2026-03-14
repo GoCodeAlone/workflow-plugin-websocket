@@ -21,6 +21,7 @@ func setupTestHub(t *testing.T) (*hub, func()) {
 		globalHubMu.Lock()
 		globalHub = prev
 		globalHubMu.Unlock()
+		h.stop()
 	}
 }
 
@@ -41,6 +42,7 @@ func waitForConns(t *testing.T, h *hub, ids ...string) {
 				close(ready)
 				return
 			}
+			time.Sleep(time.Millisecond)
 		}
 	}()
 	select {

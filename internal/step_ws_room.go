@@ -26,7 +26,14 @@ func (s *wsRoomJoinStep) Execute(ctx context.Context, triggerData map[string]any
 	connID, _ := current["connectionId"].(string)
 	room, _ := current["room"].(string)
 
-	h.joinRoom(connID, room)
+	if connID == "" || room == "" {
+		return &sdk.StepResult{Output: map[string]any{"error": "connectionId and room are required", "joined": false}}, nil
+	}
+
+	joined := h.joinRoom(connID, room)
+	if !joined {
+		return &sdk.StepResult{Output: map[string]any{"error": "connection not found", "joined": false}}, nil
+	}
 	return &sdk.StepResult{Output: map[string]any{"joined": true, "room": room}}, nil
 }
 
@@ -49,6 +56,10 @@ func (s *wsRoomLeaveStep) Execute(ctx context.Context, triggerData map[string]an
 
 	connID, _ := current["connectionId"].(string)
 	room, _ := current["room"].(string)
+
+	if connID == "" || room == "" {
+		return &sdk.StepResult{Output: map[string]any{"error": "connectionId and room are required", "left": false}}, nil
+	}
 
 	h.leaveRoom(connID, room)
 	return &sdk.StepResult{Output: map[string]any{"left": true, "room": room}}, nil
