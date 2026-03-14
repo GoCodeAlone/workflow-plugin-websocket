@@ -9,18 +9,6 @@ import (
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
 )
 
-// --- module stubs ---
-
-type wsServerModuleStub struct{ name string }
-
-func newWSServerModule(name string, config map[string]any) (sdk.ModuleInstance, error) {
-	return &wsServerModuleStub{name: name}, nil
-}
-
-func (m *wsServerModuleStub) Init() error                      { return nil }
-func (m *wsServerModuleStub) Start(ctx context.Context) error  { return nil }
-func (m *wsServerModuleStub) Stop(ctx context.Context) error   { return nil }
-
 // --- step stubs ---
 
 type wsStepStub struct{ name string }
