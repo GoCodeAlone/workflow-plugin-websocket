@@ -2,7 +2,10 @@ module github.com/GoCodeAlone/workflow-plugin-websocket
 
 go 1.26.1
 
-require github.com/GoCodeAlone/workflow v0.3.30
+require (
+	github.com/GoCodeAlone/workflow v0.3.30
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
+)
 
 require (
 	cel.dev/expr v0.25.1 // indirect
