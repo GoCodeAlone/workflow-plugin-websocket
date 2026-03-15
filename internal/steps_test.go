@@ -66,8 +66,8 @@ func TestWSSendStep(t *testing.T) {
 	}
 
 	result, err := step.Execute(context.Background(), nil, nil,
-		map[string]any{"connectionId": "conn-1", "message": `{"type":"hello"}`},
-		nil, nil)
+		nil, nil,
+		map[string]any{"connectionId": "conn-1", "message": `{"type":"hello"}`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,8 +102,8 @@ func TestWSBroadcastStep(t *testing.T) {
 	}
 
 	result, err := step.Execute(context.Background(), nil, nil,
-		map[string]any{"room": "game-1", "message": `{"event":"start"}`},
-		nil, nil)
+		nil, nil,
+		map[string]any{"room": "game-1", "message": `{"event":"start"}`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,8 +126,8 @@ func TestWSRoomJoinStep(t *testing.T) {
 	}
 
 	result, err := step.Execute(context.Background(), nil, nil,
-		map[string]any{"connectionId": "conn-1", "room": "lobby"},
-		nil, nil)
+		nil, nil,
+		map[string]any{"connectionId": "conn-1", "room": "lobby"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,8 +160,8 @@ func TestWSRoomListStep(t *testing.T) {
 	}
 
 	result, err := step.Execute(context.Background(), nil, nil,
-		map[string]any{"room": "room-a"},
-		nil, nil)
+		nil, nil,
+		map[string]any{"room": "room-a"})
 	if err != nil {
 		t.Fatal(err)
 	}
