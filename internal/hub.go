@@ -157,6 +157,30 @@ func (h *hub) broadcastToRoom(room string, msg []byte, exclude string) {
 	}
 }
 
+// BroadcastToRoom sends msg to all connections in room, returning the recipient count.
+// This satisfies the gameserver plugin's ws_bridge.WSHub interface.
+func (h *hub) BroadcastToRoom(room string, msg []byte) int {
+	h.mu.RLock()
+	members, ok := h.rooms[room]
+	if !ok {
+		h.mu.RUnlock()
+		return 0
+	}
+	ids := make([]string, 0, len(members))
+	for id := range members {
+		ids = append(ids, id)
+	}
+	h.mu.RUnlock()
+
+	count := 0
+	for _, id := range ids {
+		if h.sendTo(id, msg) {
+			count++
+		}
+	}
+	return count
+}
+
 func (h *hub) broadcastAll(msg []byte, exclude string) {
 	h.mu.RLock()
 	ids := make([]string, 0, len(h.connections))

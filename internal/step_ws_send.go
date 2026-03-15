@@ -23,8 +23,8 @@ func (s *wsSendStep) Execute(ctx context.Context, triggerData map[string]any,
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "sent": false}}, nil
 	}
 
-	connID, _ := current["connectionId"].(string)
-	message, _ := current["message"].(string)
+	connID, _ := config["connectionId"].(string)
+	message, _ := config["message"].(string)
 
 	if connID == "" {
 		return &sdk.StepResult{Output: map[string]any{"error": "connectionId required", "sent": false}}, nil

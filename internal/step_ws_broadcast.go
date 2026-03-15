@@ -23,9 +23,9 @@ func (s *wsBroadcastStep) Execute(ctx context.Context, triggerData map[string]an
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "recipients": 0}}, nil
 	}
 
-	room, _ := current["room"].(string)
-	message, _ := current["message"].(string)
-	exclude, _ := current["exclude"].(string)
+	room, _ := config["room"].(string)
+	message, _ := config["message"].(string)
+	exclude, _ := config["exclude"].(string)
 
 	msg := []byte(message)
 	var count int

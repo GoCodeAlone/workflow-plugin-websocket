@@ -21,7 +21,7 @@ func (s *wsCloseStep) Execute(ctx context.Context, triggerData map[string]any,
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "closed": false}}, nil
 	}
 
-	connID, _ := current["connectionId"].(string)
+	connID, _ := config["connectionId"].(string)
 
 	closed := h.closeConnection(connID)
 	return &sdk.StepResult{Output: map[string]any{"closed": closed}}, nil

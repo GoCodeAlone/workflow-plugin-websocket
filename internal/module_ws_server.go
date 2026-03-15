@@ -110,6 +110,9 @@ func (m *wsServerModule) Stop(ctx context.Context) error {
 	return nil
 }
 
+// HTTPPath returns the path this module wants to handle.
+func (m *wsServerModule) HTTPPath() string { return m.path }
+
 // ServeHTTP handles WebSocket upgrade requests.
 // The host workflow engine routes HTTP requests to this handler.
 func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {

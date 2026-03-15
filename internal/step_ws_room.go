@@ -23,8 +23,8 @@ func (s *wsRoomJoinStep) Execute(ctx context.Context, triggerData map[string]any
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "joined": false}}, nil
 	}
 
-	connID, _ := current["connectionId"].(string)
-	room, _ := current["room"].(string)
+	connID, _ := config["connectionId"].(string)
+	room, _ := config["room"].(string)
 
 	if connID == "" || room == "" {
 		return &sdk.StepResult{Output: map[string]any{"error": "connectionId and room are required", "joined": false}}, nil
@@ -54,8 +54,8 @@ func (s *wsRoomLeaveStep) Execute(ctx context.Context, triggerData map[string]an
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "left": false}}, nil
 	}
 
-	connID, _ := current["connectionId"].(string)
-	room, _ := current["room"].(string)
+	connID, _ := config["connectionId"].(string)
+	room, _ := config["room"].(string)
 
 	if connID == "" || room == "" {
 		return &sdk.StepResult{Output: map[string]any{"error": "connectionId and room are required", "left": false}}, nil
@@ -82,7 +82,7 @@ func (s *wsRoomListStep) Execute(ctx context.Context, triggerData map[string]any
 		return &sdk.StepResult{Output: map[string]any{"error": "ws.server not initialized", "connections": []string{}}}, nil
 	}
 
-	room, _ := current["room"].(string)
+	room, _ := config["room"].(string)
 	members := h.roomMembers(room)
 	if members == nil {
 		members = []string{}

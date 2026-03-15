@@ -10,3 +10,18 @@ import (
 func NewWebSocketPlugin() sdk.PluginProvider {
 	return internal.NewWebSocketPlugin()
 }
+
+// Hub is an exported interface for the WebSocket hub's broadcast capabilities.
+// Satisfied by the internal hub after the ws.server module is initialized.
+type Hub interface {
+	BroadcastToRoom(room string, msg []byte) int
+}
+
+// GetHub returns the global WebSocket hub once the ws.server module has been
+// initialized. Returns nil if the module has not started yet.
+func GetHub() Hub {
+	if h := internal.GetHub(); h != nil {
+		return h
+	}
+	return nil
+}
