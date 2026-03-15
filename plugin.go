@@ -15,6 +15,8 @@ func NewWebSocketPlugin() sdk.PluginProvider {
 // Satisfied by the internal hub after the ws.server module is initialized.
 type Hub interface {
 	BroadcastToRoom(room string, msg []byte) int
+	// SendTo delivers a message directly to a connection by its ID.
+	SendTo(connID string, msg []byte) bool
 }
 
 // GetHub returns the global WebSocket hub once the ws.server module has been

@@ -157,6 +157,12 @@ func (h *hub) broadcastToRoom(room string, msg []byte, exclude string) {
 	}
 }
 
+// SendTo delivers msg directly to a connection by connID.
+// Returns true if the message was queued. Satisfies the gameserver plugin's ws_bridge.WSHub interface.
+func (h *hub) SendTo(connID string, msg []byte) bool {
+	return h.sendTo(connID, msg)
+}
+
 // JoinRoom adds connID to the named room. Returns true if the connection was registered.
 // This satisfies the gameserver plugin's ws_bridge.WSHub interface.
 func (h *hub) JoinRoom(connID, room string) bool {
