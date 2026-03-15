@@ -157,6 +157,18 @@ func (h *hub) broadcastToRoom(room string, msg []byte, exclude string) {
 	}
 }
 
+// JoinRoom adds connID to the named room. Returns true if the connection was registered.
+// This satisfies the gameserver plugin's ws_bridge.WSHub interface.
+func (h *hub) JoinRoom(connID, room string) bool {
+	return h.joinRoom(connID, room)
+}
+
+// LeaveRoom removes connID from the named room.
+// This satisfies the gameserver plugin's ws_bridge.WSHub interface.
+func (h *hub) LeaveRoom(connID, room string) {
+	h.leaveRoom(connID, room)
+}
+
 // BroadcastToRoom sends msg to all connections in room, returning the recipient count.
 // This satisfies the gameserver plugin's ws_bridge.WSHub interface.
 func (h *hub) BroadcastToRoom(room string, msg []byte) int {
