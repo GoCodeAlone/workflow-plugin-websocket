@@ -33,6 +33,9 @@ func (p *wsPlugin) StepTypes() []string {
 		"step.ws_room_leave",
 		"step.ws_room_list",
 		"step.ws_close",
+		"step.ws_spectator_join",
+		"step.ws_spectator_leave",
+		"step.ws_spectator_mode_switch",
 	}
 }
 
@@ -80,6 +83,12 @@ func (p *wsPlugin) CreateStep(typeName, name string, config map[string]any) (sdk
 		return newWSRoomListStep(name, config)
 	case "step.ws_close":
 		return newWSCloseStep(name, config)
+	case "step.ws_spectator_join":
+		return newWSSpectatorJoinStep(name, config)
+	case "step.ws_spectator_leave":
+		return newWSSpectatorLeaveStep(name, config)
+	case "step.ws_spectator_mode_switch":
+		return newWSSpectatorModeSwitchStep(name, config)
 	default:
 		return nil, fmt.Errorf("unknown step type %q", typeName)
 	}

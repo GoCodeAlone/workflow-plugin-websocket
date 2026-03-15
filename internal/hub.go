@@ -16,6 +16,7 @@ type hub struct {
 	maxMessageSize int64
 	pingPeriod     time.Duration
 	pongWait       time.Duration
+	spectators     *spectatorRegistry
 }
 
 func newHub() *hub {
@@ -28,6 +29,7 @@ func newHub() *hub {
 		done:           make(chan struct{}),
 		maxMessageSize: 64 * 1024, // 64KB default
 		pingPeriod:     30 * time.Second,
+		spectators:     newSpectatorRegistry(),
 		pongWait:       60 * time.Second,
 	}
 }
@@ -208,4 +210,40 @@ func (h *hub) closeConnection(connID string) bool {
 	}
 	conn.close()
 	return true
+}
+
+// --- Spectator room delegation methods ---
+
+// spectatorJoin registers a connection as a spectator for the given game,
+// stores mode metadata, and adds the connection to the spectator:<gameId> WS room.
+func (h *hub) spectatorJoin(connID, gameID string, meta SpectatorMeta) {
+	h.spectators.join(connID, gameID, meta)
+	h.joinRoom(connID, "spectator:"+gameID)
+}
+
+// spectatorLeave removes a connection from the spectator registry and
+// the spectator:<gameId> WS room.
+func (h *hub) spectatorLeave(connID, gameID string) {
+	h.spectators.leave(connID, gameID)
+	h.leaveRoom(connID, "spectator:"+gameID)
+}
+
+// spectatorSetMode updates the observation mode for an existing spectator connection.
+func (h *hub) spectatorSetMode(connID, gameID string, meta SpectatorMeta) {
+	h.spectators.setMode(connID, gameID, meta)
+}
+
+// getSpectatorMeta returns the current spectator metadata for a connection.
+func (h *hub) getSpectatorMeta(connID, gameID string) (SpectatorMeta, bool) {
+	return h.spectators.getMeta(connID, gameID)
+}
+
+// spectatorCount returns the number of spectators currently watching a game.
+func (h *hub) spectatorCount(gameID string) int {
+	return h.spectators.count(gameID)
+}
+
+// spectatorAllForGame returns a snapshot of all spectator connections for a game.
+func (h *hub) spectatorAllForGame(gameID string) map[string]SpectatorMeta {
+	return h.spectators.allForGame(gameID)
 }
