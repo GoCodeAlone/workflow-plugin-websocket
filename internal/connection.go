@@ -18,6 +18,7 @@ type connection struct {
 
 func (c *connection) readPump(onMessage func(connID string, msg []byte)) {
 	defer func() {
+		callGlobalWSDisconnectHandler(c.id)
 		c.hub.unregister <- c
 		c.close()
 	}()

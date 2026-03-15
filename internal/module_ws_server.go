@@ -139,6 +139,9 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m.hub.register <- conn
+	// Fire connect event after the connection is registered in the hub so that
+	// ws_connect pipelines (e.g. welcome message) can send immediately.
+	go callGlobalWSConnectHandler(connID)
 	go conn.writePump()
 	go conn.readPump(func(connID string, msg []byte) {
 		callGlobalWSMessageHandler(connID, msg)

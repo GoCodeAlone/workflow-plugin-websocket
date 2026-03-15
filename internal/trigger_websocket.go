@@ -15,6 +15,14 @@ import (
 var (
 	globalWSMessageHandler   func(connID string, msg []byte)
 	globalWSMessageHandlerMu sync.RWMutex
+
+	// globalWSConnectHandler fires once per new connection, before the first message.
+	globalWSConnectHandler   func(connID string)
+	globalWSConnectHandlerMu sync.RWMutex
+
+	// globalWSDisconnectHandler fires when a connection closes.
+	globalWSDisconnectHandler   func(connID string)
+	globalWSDisconnectHandlerMu sync.RWMutex
 )
 
 func setGlobalWSMessageHandler(h func(connID string, msg []byte)) {
@@ -34,6 +42,40 @@ func callGlobalWSMessageHandler(connID string, msg []byte) {
 	}
 }
 
+func setGlobalWSConnectHandler(h func(connID string)) {
+	globalWSConnectHandlerMu.Lock()
+	defer globalWSConnectHandlerMu.Unlock()
+	globalWSConnectHandler = h
+}
+
+// callGlobalWSConnectHandler is called by wsServerModule.ServeHTTP after a new
+// connection is registered in the hub.
+func callGlobalWSConnectHandler(connID string) {
+	globalWSConnectHandlerMu.RLock()
+	h := globalWSConnectHandler
+	globalWSConnectHandlerMu.RUnlock()
+	if h != nil {
+		h(connID)
+	}
+}
+
+func setGlobalWSDisconnectHandler(h func(connID string)) {
+	globalWSDisconnectHandlerMu.Lock()
+	defer globalWSDisconnectHandlerMu.Unlock()
+	globalWSDisconnectHandler = h
+}
+
+// callGlobalWSDisconnectHandler is called by connection.readPump when a
+// connection's read loop exits (i.e. the client disconnected).
+func callGlobalWSDisconnectHandler(connID string) {
+	globalWSDisconnectHandlerMu.RLock()
+	h := globalWSDisconnectHandler
+	globalWSDisconnectHandlerMu.RUnlock()
+	if h != nil {
+		h(connID)
+	}
+}
+
 // wsTrigger implements sdk.ModuleInstance for the "websocket" trigger type.
 // The host engine creates this via CreateModule("websocket", ...) and calls
 // Init/Start/Stop to manage its lifecycle (same pattern as RemoteTrigger).
@@ -46,6 +88,12 @@ func callGlobalWSMessageHandler(connID string, msg []byte) {
 //	payload      — decoded JSON object (if the message is valid JSON)
 //	room         — first room the connection belongs to (empty if none)
 //	rooms        — all rooms the connection belongs to
+//
+// Connect/disconnect lifecycle events are also fired:
+//
+//	event "connect"    — fired immediately after the connection is registered;
+//	                     only connectionId is populated (no message/payload).
+//	event "disconnect" — fired when the read loop exits (client gone).
 type wsTrigger struct {
 	cb sdk.TriggerCallback
 }
@@ -97,10 +145,31 @@ func (t *wsTrigger) Start(_ context.Context) error {
 
 		_ = t.cb("message", data)
 	})
+
+	setGlobalWSConnectHandler(func(connID string) {
+		if t.cb == nil {
+			return
+		}
+		_ = t.cb("connect", map[string]any{
+			"connectionId": connID,
+		})
+	})
+
+	setGlobalWSDisconnectHandler(func(connID string) {
+		if t.cb == nil {
+			return
+		}
+		_ = t.cb("disconnect", map[string]any{
+			"connectionId": connID,
+		})
+	})
+
 	return nil
 }
 
 func (t *wsTrigger) Stop(_ context.Context) error {
 	setGlobalWSMessageHandler(nil)
+	setGlobalWSConnectHandler(nil)
+	setGlobalWSDisconnectHandler(nil)
 	return nil
 }
