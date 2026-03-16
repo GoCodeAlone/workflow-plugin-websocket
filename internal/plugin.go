@@ -2,9 +2,29 @@ package internal
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
 )
+
+// WSServerInstance is the public interface for the ws.server module,
+// exposing the HTTP handler methods needed for in-process registration.
+type WSServerInstance interface {
+	sdk.ModuleInstance
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	HTTPPath() string
+}
+
+// NewWSServerModule creates a new ws.server module instance and returns it
+// via the WSServerInstance interface so the host binary can register the
+// WebSocket upgrade handler directly on the engine's HTTP router.
+func NewWSServerModule(name string, config map[string]any) (WSServerInstance, error) {
+	inst, err := newWSServerModule(name, config)
+	if err != nil {
+		return nil, err
+	}
+	return inst.(*wsServerModule), nil
+}
 
 type wsPlugin struct{}
 
