@@ -123,6 +123,31 @@ func TestHub_Broadcast(t *testing.T) {
 	}
 }
 
+// TestHub_RegisterSync_ImmediatelyAvailable verifies that after registerSync returns,
+// the connection is immediately available for joinRoom without polling.
+// This guards against the race condition where the channel-based register path
+// (m.hub.register <- conn) caused joinRoom to fail when the connect handler fired
+// before the hub run-loop processed the registration.
+func TestHub_RegisterSync_ImmediatelyAvailable(t *testing.T) {
+	h := newHub()
+	go h.run()
+	t.Cleanup(func() { h.stop() })
+
+	conn := &connection{id: "conn-sync", send: make(chan []byte, 256)}
+	h.registerSync(conn)
+
+	// No polling — joinRoom must succeed immediately after registerSync returns.
+	joined := h.joinRoom("conn-sync", "test-room")
+	if !joined {
+		t.Fatal("registerSync must make connection available for joinRoom without delay")
+	}
+
+	members := h.roomMembers("test-room")
+	if len(members) != 1 || members[0] != "conn-sync" {
+		t.Errorf("expected [conn-sync] in room, got %v", members)
+	}
+}
+
 func TestHub_BroadcastExclude(t *testing.T) {
 	h := newHub()
 	go h.run()

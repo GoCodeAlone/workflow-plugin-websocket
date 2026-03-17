@@ -138,9 +138,12 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		hub:  m.hub,
 	}
 
-	m.hub.register <- conn
-	// Fire connect event after the connection is registered in the hub so that
-	// ws_connect pipelines (e.g. welcome message) can send immediately.
+	// registerSync adds the connection to connRooms under the mutex before returning,
+	// so callGlobalWSConnectHandler (which fires ws_connect → step.ws_room_join → joinRoom)
+	// always finds the connection registered. Using the channel (m.hub.register <- conn)
+	// caused a race: the hub run-loop may not have processed the channel item yet when
+	// the connect handler fires.
+	m.hub.registerSync(conn)
 	go callGlobalWSConnectHandler(connID)
 	go conn.writePump()
 	go conn.readPump(func(connID string, msg []byte) {

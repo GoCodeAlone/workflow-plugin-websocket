@@ -67,6 +67,18 @@ func (h *hub) stop() {
 	close(h.done)
 }
 
+// registerSync adds a connection to the hub directly under the mutex, bypassing the
+// register channel. Unlike the channel-based path, this is synchronous and guarantees
+// that connRooms[connID] exists before returning. Use this in ServeHTTP so the
+// ws_connect pipeline (which calls step.ws_room_join → joinRoom) never races with
+// the hub run-loop's deferred map update.
+func (h *hub) registerSync(conn *connection) {
+	h.mu.Lock()
+	h.connections[conn.id] = conn
+	h.connRooms[conn.id] = make(map[string]bool)
+	h.mu.Unlock()
+}
+
 func (h *hub) joinRoom(connID, room string) bool {
 	if connID == "" || room == "" {
 		return false
