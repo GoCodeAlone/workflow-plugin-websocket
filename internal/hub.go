@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -133,10 +134,12 @@ func (h *hub) sendTo(connID string, msg []byte) (sent bool) {
 	conn, ok := h.connections[connID]
 	h.mu.RUnlock()
 	if !ok {
+		slog.Warn("ws sendTo: connection not found", "connID", connID, "msgLen", len(msg))
 		return false
 	}
 	defer func() {
 		if recover() != nil {
+			slog.Warn("ws sendTo: send on closed channel", "connID", connID, "msgLen", len(msg))
 			sent = false
 		}
 	}()
@@ -144,6 +147,7 @@ func (h *hub) sendTo(connID string, msg []byte) (sent bool) {
 	case conn.send <- msg:
 		return true
 	default:
+		slog.Warn("ws sendTo: send buffer full, dropping message", "connID", connID, "msgLen", len(msg))
 		return false
 	}
 }
