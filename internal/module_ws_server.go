@@ -28,6 +28,7 @@ type wsServerModule struct {
 	path           string
 	maxConnections int
 	pingInterval   time.Duration
+	pongWait       time.Duration
 	maxMessageSize int64
 	authRequired   bool
 	hub            *hub
@@ -56,6 +57,12 @@ func newWSServerModule(name string, config map[string]any) (sdk.ModuleInstance, 
 			m.pingInterval = d
 		}
 	}
+	if v, ok := config["pongWait"].(string); ok {
+		d, err := time.ParseDuration(v)
+		if err == nil {
+			m.pongWait = d
+		}
+	}
 	if v, ok := config["maxMessageSize"].(float64); ok {
 		m.maxMessageSize = int64(v)
 	}
@@ -74,7 +81,11 @@ func (m *wsServerModule) Init() error {
 	m.hub = newHub()
 	m.hub.maxMessageSize = m.maxMessageSize
 	m.hub.pingPeriod = m.pingInterval
-	m.hub.pongWait = m.pingInterval * 2
+	if m.pongWait > 0 {
+		m.hub.pongWait = m.pongWait
+	} else {
+		m.hub.pongWait = m.pingInterval * 2
+	}
 
 	globalHubMu.Lock()
 	globalHub = m.hub
