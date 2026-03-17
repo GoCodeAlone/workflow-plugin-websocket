@@ -144,7 +144,21 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// caused a race: the hub run-loop may not have processed the channel item yet when
 	// the connect handler fires.
 	m.hub.registerSync(conn)
-	go callGlobalWSConnectHandler(connID)
+
+	// Extract URL query params so ws_connect pipelines can reference them in templates
+	// (e.g. {{ .sessionID }} from ?sessionId=<id>). We copy all params and also add
+	// the canonical sessionID alias so both {{ .sessionId }} and {{ .sessionID }} work.
+	extra := make(map[string]any, len(r.URL.Query()))
+	for k, vals := range r.URL.Query() {
+		if len(vals) > 0 {
+			extra[k] = vals[0]
+		}
+	}
+	if sid, ok := extra["sessionId"]; ok {
+		extra["sessionID"] = sid
+	}
+
+	go callGlobalWSConnectHandler(connID, extra)
 	go conn.writePump()
 	go conn.readPump(func(connID string, msg []byte) {
 		callGlobalWSMessageHandler(connID, msg)

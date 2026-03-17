@@ -232,6 +232,67 @@ func TestWSTrigger_NonJSONMessage(t *testing.T) {
 	}
 }
 
+// TestWSTrigger_ConnectEventIncludesExtra verifies that callGlobalWSConnectHandler
+// passes extra context (e.g. URL query params) through to the trigger callback.
+// This covers the bug where ws_connect pipelines using {{ .sessionID }} received an
+// empty string because the connect event only carried connectionId.
+func TestWSTrigger_ConnectEventIncludesExtra(t *testing.T) {
+	_, cleanup := setupTestHub(t)
+	defer cleanup()
+
+	var (
+		mu           sync.Mutex
+		gotData      map[string]any
+		callbackDone = make(chan struct{})
+	)
+
+	cb := func(action string, data map[string]any) error {
+		if action != "connect" {
+			return nil
+		}
+		mu.Lock()
+		gotData = data
+		mu.Unlock()
+		close(callbackDone)
+		return nil
+	}
+
+	p := &wsPlugin{}
+	trigger, err := p.CreateTrigger("websocket", nil, cb)
+	if err != nil {
+		t.Fatalf("CreateTrigger: %v", err)
+	}
+	if err := trigger.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer trigger.Stop(context.Background()) //nolint:errcheck
+
+	extra := map[string]any{
+		"sessionId": "sess-xyz",
+		"sessionID": "sess-xyz", // canonical alias added by ServeHTTP
+	}
+	callGlobalWSConnectHandler("conn-extra", extra)
+
+	select {
+	case <-callbackDone:
+	case <-time.After(time.Second):
+		t.Fatal("connect callback not called within 1s")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if gotData["connectionId"] != "conn-extra" {
+		t.Errorf("connectionId = %v, want %q", gotData["connectionId"], "conn-extra")
+	}
+	if gotData["sessionID"] != "sess-xyz" {
+		t.Errorf("sessionID = %v, want %q", gotData["sessionID"], "sess-xyz")
+	}
+	if gotData["sessionId"] != "sess-xyz" {
+		t.Errorf("sessionId = %v, want %q", gotData["sessionId"], "sess-xyz")
+	}
+}
+
 // TestWSTrigger_CreateTriggerPlugin verifies plugin-level TriggerTypes/CreateTrigger.
 func TestWSTrigger_CreateTriggerPlugin(t *testing.T) {
 	p := &wsPlugin{}

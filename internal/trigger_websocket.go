@@ -17,7 +17,8 @@ var (
 	globalWSMessageHandlerMu sync.RWMutex
 
 	// globalWSConnectHandler fires once per new connection, before the first message.
-	globalWSConnectHandler   func(connID string)
+	// extra carries URL query params extracted at upgrade time (e.g. sessionId → sessionID).
+	globalWSConnectHandler   func(connID string, extra map[string]any)
 	globalWSConnectHandlerMu sync.RWMutex
 
 	// globalWSDisconnectHandler fires when a connection closes.
@@ -42,20 +43,21 @@ func callGlobalWSMessageHandler(connID string, msg []byte) {
 	}
 }
 
-func setGlobalWSConnectHandler(h func(connID string)) {
+func setGlobalWSConnectHandler(h func(connID string, extra map[string]any)) {
 	globalWSConnectHandlerMu.Lock()
 	defer globalWSConnectHandlerMu.Unlock()
 	globalWSConnectHandler = h
 }
 
 // callGlobalWSConnectHandler is called by wsServerModule.ServeHTTP after a new
-// connection is registered in the hub.
-func callGlobalWSConnectHandler(connID string) {
+// connection is registered in the hub. extra carries URL query params from the
+// upgrade request so pipelines like ws_connect can reference e.g. {{ .sessionID }}.
+func callGlobalWSConnectHandler(connID string, extra map[string]any) {
 	globalWSConnectHandlerMu.RLock()
 	h := globalWSConnectHandler
 	globalWSConnectHandlerMu.RUnlock()
 	if h != nil {
-		h(connID)
+		h(connID, extra)
 	}
 }
 
@@ -146,13 +148,17 @@ func (t *wsTrigger) Start(_ context.Context) error {
 		_ = t.cb("message", data)
 	})
 
-	setGlobalWSConnectHandler(func(connID string) {
+	setGlobalWSConnectHandler(func(connID string, extra map[string]any) {
 		if t.cb == nil {
 			return
 		}
-		_ = t.cb("connect", map[string]any{
+		ctx := map[string]any{
 			"connectionId": connID,
-		})
+		}
+		for k, v := range extra {
+			ctx[k] = v
+		}
+		_ = t.cb("connect", ctx)
 	})
 
 	setGlobalWSDisconnectHandler(func(connID string) {
