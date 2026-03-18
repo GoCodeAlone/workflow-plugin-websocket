@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 func TestWSTrigger_ReceivesMessage(t *testing.T) {
@@ -13,7 +15,7 @@ func TestWSTrigger_ReceivesMessage(t *testing.T) {
 	defer cleanup()
 
 	// Register a connection in a room.
-	conn := &connection{id: "conn-1", send: make(chan []byte, 256)}
+	conn := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
 	h.register <- conn
 	// Wait for registration.
 	for {
@@ -57,7 +59,7 @@ func TestWSTrigger_ReceivesMessage(t *testing.T) {
 
 	// Simulate an inbound WS message.
 	msg := `{"type":"play_card","card":"ace-of-spades"}`
-	callGlobalWSMessageHandler("conn-1", []byte(msg))
+	callGlobalWSMessageHandler("conn-1", websocket.TextMessage, []byte(msg))
 
 	select {
 	case <-callbackDone:
@@ -95,7 +97,7 @@ func TestWSTrigger_NoRoom(t *testing.T) {
 	h, cleanup := setupTestHub(t)
 	defer cleanup()
 
-	conn := &connection{id: "conn-2", send: make(chan []byte, 256)}
+	conn := &connection{id: "conn-2", send: make(chan wsMessage, 256)}
 	h.register <- conn
 	for {
 		h.mu.RLock()
@@ -131,7 +133,7 @@ func TestWSTrigger_NoRoom(t *testing.T) {
 	}
 	defer trigger.Stop(context.Background()) //nolint:errcheck
 
-	callGlobalWSMessageHandler("conn-2", []byte(`{"ping":true}`))
+	callGlobalWSMessageHandler("conn-2", websocket.TextMessage, []byte(`{"ping":true}`))
 
 	select {
 	case <-callbackDone:
@@ -209,7 +211,7 @@ func TestWSTrigger_NonJSONMessage(t *testing.T) {
 	}
 	defer trigger.Stop(context.Background()) //nolint:errcheck
 
-	callGlobalWSMessageHandler("conn-x", []byte("plain text message"))
+	callGlobalWSMessageHandler("conn-x", websocket.TextMessage, []byte("plain text message"))
 
 	select {
 	case <-callbackDone:

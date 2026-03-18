@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
+	"github.com/gorilla/websocket"
 )
 
 // globalWSMessageHandler is the package-level dispatch hook.
@@ -13,7 +14,7 @@ import (
 // allowing the websocket trigger module to receive them without holding a direct
 // reference to the wsServerModule instance.
 var (
-	globalWSMessageHandler   func(connID string, msg []byte)
+	globalWSMessageHandler   func(connID string, msgType int, msg []byte)
 	globalWSMessageHandlerMu sync.RWMutex
 
 	// globalWSConnectHandler fires once per new connection, before the first message.
@@ -26,7 +27,7 @@ var (
 	globalWSDisconnectHandlerMu sync.RWMutex
 )
 
-func setGlobalWSMessageHandler(h func(connID string, msg []byte)) {
+func setGlobalWSMessageHandler(h func(connID string, msgType int, msg []byte)) {
 	globalWSMessageHandlerMu.Lock()
 	defer globalWSMessageHandlerMu.Unlock()
 	globalWSMessageHandler = h
@@ -34,12 +35,12 @@ func setGlobalWSMessageHandler(h func(connID string, msg []byte)) {
 
 // callGlobalWSMessageHandler is called by wsServerModule.ServeHTTP for each
 // inbound message. It is safe for concurrent use.
-func callGlobalWSMessageHandler(connID string, msg []byte) {
+func callGlobalWSMessageHandler(connID string, msgType int, msg []byte) {
 	globalWSMessageHandlerMu.RLock()
 	h := globalWSMessageHandler
 	globalWSMessageHandlerMu.RUnlock()
 	if h != nil {
-		h(connID, msg)
+		h(connID, msgType, msg)
 	}
 }
 
@@ -111,7 +112,7 @@ func newWSTrigger(_ map[string]any, cb sdk.TriggerCallback) (sdk.ModuleInstance,
 func (t *wsTrigger) Init() error { return nil }
 
 func (t *wsTrigger) Start(_ context.Context) error {
-	setGlobalWSMessageHandler(func(connID string, msg []byte) {
+	setGlobalWSMessageHandler(func(connID string, msgType int, msg []byte) {
 		if t.cb == nil {
 			return
 		}
@@ -134,15 +135,21 @@ func (t *wsTrigger) Start(_ context.Context) error {
 
 		data := map[string]any{
 			"connectionId": connID,
-			"message":      string(msg),
+			"messageType":  msgType,
 			"room":         room,
 			"rooms":        rooms,
 		}
 
-		// Merge decoded JSON payload if message is valid JSON.
-		var payload map[string]any
-		if err := json.Unmarshal(msg, &payload); err == nil {
-			data["payload"] = payload
+		if msgType == websocket.BinaryMessage {
+			data["binaryPayload"] = msg
+			data["message"] = ""
+		} else {
+			data["message"] = string(msg)
+			// Merge decoded JSON payload if message is valid JSON.
+			var payload map[string]any
+			if err := json.Unmarshal(msg, &payload); err == nil {
+				data["payload"] = payload
+			}
 		}
 
 		_ = t.cb("message", data)

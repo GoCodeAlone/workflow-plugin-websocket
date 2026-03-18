@@ -33,7 +33,7 @@ type wsServerModule struct {
 	authRequired   bool
 	hub            *hub
 	upgrader       websocket.Upgrader
-	onMessage      func(connID string, msg []byte)
+	onMessage      func(connID string, msgType int, msg []byte)
 }
 
 func newWSServerModule(name string, config map[string]any) (sdk.ModuleInstance, error) {
@@ -145,7 +145,7 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn := &connection{
 		id:   connID,
 		conn: wsConn,
-		send: make(chan []byte, 256),
+		send: make(chan wsMessage, 256),
 		hub:  m.hub,
 	}
 
@@ -171,15 +171,15 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	go callGlobalWSConnectHandler(connID, extra)
 	go conn.writePump()
-	go conn.readPump(func(connID string, msg []byte) {
-		callGlobalWSMessageHandler(connID, msg)
+	go conn.readPump(func(connID string, msgType int, msg []byte) {
+		callGlobalWSMessageHandler(connID, msgType, msg)
 		if m.onMessage != nil {
-			m.onMessage(connID, msg)
+			m.onMessage(connID, msgType, msg)
 		}
 	})
 }
 
 // SetMessageHandler allows the trigger system to receive incoming WS messages.
-func (m *wsServerModule) SetMessageHandler(handler func(connID string, msg []byte)) {
+func (m *wsServerModule) SetMessageHandler(handler func(connID string, msgType int, msg []byte)) {
 	m.onMessage = handler
 }

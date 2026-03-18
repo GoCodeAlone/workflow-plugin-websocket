@@ -56,7 +56,7 @@ func TestWSSendStep(t *testing.T) {
 	h, cleanup := setupTestHub(t)
 	defer cleanup()
 
-	conn := &connection{id: "conn-1", send: make(chan []byte, 256)}
+	conn := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
 	h.register <- conn
 	waitForConns(t, h, "conn-1")
 
@@ -77,9 +77,9 @@ func TestWSSendStep(t *testing.T) {
 
 	msg := <-conn.send
 	var parsed map[string]any
-	json.Unmarshal(msg, &parsed)
+	json.Unmarshal(msg.data, &parsed)
 	if parsed["type"] != "hello" {
-		t.Fatalf("expected hello message, got %s", string(msg))
+		t.Fatalf("expected hello message, got %s", string(msg.data))
 	}
 }
 
@@ -87,8 +87,8 @@ func TestWSBroadcastStep(t *testing.T) {
 	h, cleanup := setupTestHub(t)
 	defer cleanup()
 
-	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
-	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
+	conn1 := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
+	conn2 := &connection{id: "conn-2", send: make(chan wsMessage, 256)}
 	h.register <- conn1
 	h.register <- conn2
 	waitForConns(t, h, "conn-1", "conn-2")
@@ -116,7 +116,7 @@ func TestWSRoomJoinStep(t *testing.T) {
 	h, cleanup := setupTestHub(t)
 	defer cleanup()
 
-	conn := &connection{id: "conn-1", send: make(chan []byte, 256)}
+	conn := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
 	h.register <- conn
 	waitForConns(t, h, "conn-1")
 
@@ -145,8 +145,8 @@ func TestWSRoomListStep(t *testing.T) {
 	h, cleanup := setupTestHub(t)
 	defer cleanup()
 
-	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
-	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
+	conn1 := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
+	conn2 := &connection{id: "conn-2", send: make(chan wsMessage, 256)}
 	h.register <- conn1
 	h.register <- conn2
 	waitForConns(t, h, "conn-1", "conn-2")

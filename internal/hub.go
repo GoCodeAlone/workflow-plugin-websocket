@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type hub struct {
@@ -126,10 +128,16 @@ func (h *hub) roomMembers(room string) []string {
 	return result
 }
 
-// sendTo delivers msg to a connection. Returns false if the connection is gone
-// or the send buffer is full. Uses recover to guard against send-on-closed-channel
-// when a connection closes concurrently with a send attempt.
-func (h *hub) sendTo(connID string, msg []byte) (sent bool) {
+// sendTo delivers a text message to a connection. Returns false if the connection
+// is gone or the send buffer is full.
+func (h *hub) sendTo(connID string, msg []byte) bool {
+	return h.sendToWithType(connID, msg, websocket.TextMessage)
+}
+
+// sendToWithType delivers msg with the given WebSocket frame type to a connection.
+// Returns false if the connection is gone or the send buffer is full. Uses recover
+// to guard against send-on-closed-channel when a connection closes concurrently.
+func (h *hub) sendToWithType(connID string, msg []byte, msgType int) (sent bool) {
 	h.mu.RLock()
 	conn, ok := h.connections[connID]
 	h.mu.RUnlock()
@@ -144,7 +152,7 @@ func (h *hub) sendTo(connID string, msg []byte) (sent bool) {
 		}
 	}()
 	select {
-	case conn.send <- msg:
+	case conn.send <- wsMessage{msgType: msgType, data: msg}:
 		return true
 	default:
 		slog.Warn("ws sendTo: send buffer full, dropping message", "connID", connID, "msgLen", len(msg))
@@ -189,6 +197,35 @@ func (h *hub) JoinRoom(connID, room string) bool {
 // This satisfies the gameserver plugin's ws_bridge.WSHub interface.
 func (h *hub) LeaveRoom(connID, room string) {
 	h.leaveRoom(connID, room)
+}
+
+// SendBinary delivers a binary frame directly to a connection by connID.
+// Returns true if the message was queued.
+func (h *hub) SendBinary(connID string, msg []byte) bool {
+	return h.sendToWithType(connID, msg, websocket.BinaryMessage)
+}
+
+// BroadcastBinaryToRoom sends a binary frame to all connections in room, returning the recipient count.
+func (h *hub) BroadcastBinaryToRoom(room string, msg []byte) int {
+	h.mu.RLock()
+	members, ok := h.rooms[room]
+	if !ok {
+		h.mu.RUnlock()
+		return 0
+	}
+	ids := make([]string, 0, len(members))
+	for id := range members {
+		ids = append(ids, id)
+	}
+	h.mu.RUnlock()
+
+	count := 0
+	for _, id := range ids {
+		if h.sendToWithType(id, msg, websocket.BinaryMessage) {
+			count++
+		}
+	}
+	return count
 }
 
 // BroadcastToRoom sends msg to all connections in room, returning the recipient count.

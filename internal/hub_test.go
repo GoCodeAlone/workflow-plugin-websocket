@@ -10,7 +10,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 	go h.run()
 	t.Cleanup(func() { h.stop() })
 
-	mockConn := &connection{id: "conn-1", send: make(chan []byte, 256)}
+	mockConn := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
 	h.register <- mockConn
 
 	// Wait for registration
@@ -58,7 +58,7 @@ func TestHub_RoomJoinLeave(t *testing.T) {
 	go h.run()
 	t.Cleanup(func() { h.stop() })
 
-	mockConn := &connection{id: "conn-1", send: make(chan []byte, 256)}
+	mockConn := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
 	h.register <- mockConn
 
 	// Wait for registration
@@ -93,8 +93,8 @@ func TestHub_Broadcast(t *testing.T) {
 	go h.run()
 	t.Cleanup(func() { h.stop() })
 
-	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
-	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
+	conn1 := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
+	conn2 := &connection{id: "conn-2", send: make(chan wsMessage, 256)}
 	h.register <- conn1
 	h.register <- conn2
 
@@ -118,7 +118,7 @@ func TestHub_Broadcast(t *testing.T) {
 
 	msg1 := <-conn1.send
 	msg2 := <-conn2.send
-	if string(msg1) != `{"event":"test"}` || string(msg2) != `{"event":"test"}` {
+	if string(msg1.data) != `{"event":"test"}` || string(msg2.data) != `{"event":"test"}` {
 		t.Fatalf("both connections should receive broadcast")
 	}
 }
@@ -133,7 +133,7 @@ func TestHub_RegisterSync_ImmediatelyAvailable(t *testing.T) {
 	go h.run()
 	t.Cleanup(func() { h.stop() })
 
-	conn := &connection{id: "conn-sync", send: make(chan []byte, 256)}
+	conn := &connection{id: "conn-sync", send: make(chan wsMessage, 256)}
 	h.registerSync(conn)
 
 	// No polling — joinRoom must succeed immediately after registerSync returns.
@@ -153,8 +153,8 @@ func TestHub_BroadcastExclude(t *testing.T) {
 	go h.run()
 	t.Cleanup(func() { h.stop() })
 
-	conn1 := &connection{id: "conn-1", send: make(chan []byte, 256)}
-	conn2 := &connection{id: "conn-2", send: make(chan []byte, 256)}
+	conn1 := &connection{id: "conn-1", send: make(chan wsMessage, 256)}
+	conn2 := &connection{id: "conn-2", send: make(chan wsMessage, 256)}
 	h.register <- conn1
 	h.register <- conn2
 
@@ -179,7 +179,7 @@ func TestHub_BroadcastExclude(t *testing.T) {
 	// Only conn2 should receive
 	select {
 	case msg := <-conn2.send:
-		if string(msg) != `{"event":"test"}` {
+		if string(msg.data) != `{"event":"test"}` {
 			t.Fatalf("conn2 should receive broadcast")
 		}
 	default:

@@ -7,16 +7,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type wsMessage struct {
+	msgType int
+	data    []byte
+}
+
 type connection struct {
 	id     string
 	conn   *websocket.Conn
-	send   chan []byte
+	send   chan wsMessage
 	hub    *hub
 	mu     sync.Mutex
 	closed bool
 }
 
-func (c *connection) readPump(onMessage func(connID string, msg []byte)) {
+func (c *connection) readPump(onMessage func(connID string, msgType int, msg []byte)) {
 	defer func() {
 		callGlobalWSDisconnectHandler(c.id)
 		c.hub.unregister <- c
@@ -29,12 +34,12 @@ func (c *connection) readPump(onMessage func(connID string, msg []byte)) {
 		return nil
 	})
 	for {
-		_, msg, err := c.conn.ReadMessage()
+		msgType, msg, err := c.conn.ReadMessage()
 		if err != nil {
 			break
 		}
 		if onMessage != nil {
-			onMessage(c.id, msg)
+			onMessage(c.id, msgType, msg)
 		}
 	}
 }
@@ -53,7 +58,7 @@ func (c *connection) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+			if err := c.conn.WriteMessage(msg.msgType, msg.data); err != nil {
 				return
 			}
 		case <-ticker.C:
