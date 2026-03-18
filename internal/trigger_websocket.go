@@ -2,11 +2,9 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
-	"github.com/gorilla/websocket"
 )
 
 // globalWSMessageHandler is the package-level dispatch hook.
@@ -140,17 +138,8 @@ func (t *wsTrigger) Start(_ context.Context) error {
 			"rooms":        rooms,
 		}
 
-		if msgType == websocket.BinaryMessage {
-			data["binaryPayload"] = msg
-			data["message"] = ""
-		} else {
-			data["message"] = string(msg)
-			// Merge decoded JSON payload if message is valid JSON.
-			var payload map[string]any
-			if err := json.Unmarshal(msg, &payload); err == nil {
-				data["payload"] = payload
-			}
-		}
+		data["binaryPayload"] = msg
+		data["message"] = string(msg)
 
 		_ = t.cb("message", data)
 	})
