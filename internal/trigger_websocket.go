@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
@@ -140,6 +141,12 @@ func (t *wsTrigger) Start(_ context.Context) error {
 
 		data["binaryPayload"] = msg
 		data["message"] = string(msg)
+
+		// Decode JSON payload if the message is valid JSON.
+		var payload map[string]any
+		if json.Unmarshal(msg, &payload) == nil {
+			data["payload"] = payload
+		}
 
 		_ = t.cb("message", data)
 	})
