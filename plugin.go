@@ -79,3 +79,17 @@ func (h *WSServerHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 func StartCtx(ctx context.Context, m WSServerModule) error {
 	return m.Start(ctx)
 }
+
+// SetSendHook installs a hook that overrides the text-frame direct send in step.ws_send.
+// The hook receives the connection ID and message bytes and returns whether the send succeeded.
+// Pass nil to remove the hook and restore default behaviour.
+func SetSendHook(f func(connID string, msg []byte) bool) {
+	internal.SetSendHook(f)
+}
+
+// SetBroadcastHook installs a hook that overrides the room-broadcast in step.ws_broadcast.
+// The hook receives the room name and message bytes and returns the number of recipients.
+// Pass nil to remove the hook.
+func SetBroadcastHook(f func(room string, msg []byte) int) {
+	internal.SetBroadcastHook(f)
+}

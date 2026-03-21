@@ -30,6 +30,11 @@ func (s *wsSendStep) Execute(ctx context.Context, triggerData map[string]any,
 		return &sdk.StepResult{Output: map[string]any{"error": "connectionId required", "sent": false}}, nil
 	}
 
-	sent := h.sendTo(connID, []byte(message))
+	var sent bool
+	if hook := getSendHook(); hook != nil {
+		sent = hook(connID, []byte(message))
+	} else {
+		sent = h.sendTo(connID, []byte(message))
+	}
 	return &sdk.StepResult{Output: map[string]any{"sent": sent}}, nil
 }

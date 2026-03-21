@@ -14,6 +14,12 @@ import (
 var (
 	globalHub   *hub
 	globalHubMu sync.RWMutex
+
+	// globalSendHook, if set, overrides the default text-frame send in step.ws_send.
+	// Used by the gameserver proto bridge to transparently encode JSON as protobuf binary.
+	globalSendHook      func(connID string, msg []byte) bool
+	globalBroadcastHook func(room string, msg []byte) int
+	globalHookMu        sync.RWMutex
 )
 
 // GetHub returns the global WebSocket hub for step types to use.
@@ -21,6 +27,36 @@ func GetHub() *hub {
 	globalHubMu.RLock()
 	defer globalHubMu.RUnlock()
 	return globalHub
+}
+
+// SetSendHook installs a hook that overrides direct sends in step.ws_send.
+// Pass nil to remove the hook.
+func SetSendHook(f func(connID string, msg []byte) bool) {
+	globalHookMu.Lock()
+	globalSendHook = f
+	globalHookMu.Unlock()
+}
+
+// SetBroadcastHook installs a hook that overrides room broadcasts in step.ws_broadcast.
+// Pass nil to remove the hook.
+func SetBroadcastHook(f func(room string, msg []byte) int) {
+	globalHookMu.Lock()
+	globalBroadcastHook = f
+	globalHookMu.Unlock()
+}
+
+// getSendHook returns the currently installed send hook (or nil).
+func getSendHook() func(connID string, msg []byte) bool {
+	globalHookMu.RLock()
+	defer globalHookMu.RUnlock()
+	return globalSendHook
+}
+
+// getBroadcastHook returns the currently installed broadcast hook (or nil).
+func getBroadcastHook() func(room string, msg []byte) int {
+	globalHookMu.RLock()
+	defer globalHookMu.RUnlock()
+	return globalBroadcastHook
 }
 
 type wsServerModule struct {

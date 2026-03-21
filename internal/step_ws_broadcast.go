@@ -29,13 +29,25 @@ func (s *wsBroadcastStep) Execute(ctx context.Context, triggerData map[string]an
 
 	msg := []byte(message)
 	var count int
+	broadcastHook := getBroadcastHook()
+	sendHook := getSendHook()
 
 	if room != "" {
-		members := h.roomMembers(room)
-		for _, id := range members {
-			if id != exclude {
-				if h.sendTo(id, msg) {
-					count++
+		if broadcastHook != nil && exclude == "" {
+			count = broadcastHook(room, msg)
+		} else {
+			members := h.roomMembers(room)
+			for _, id := range members {
+				if id != exclude {
+					var sent bool
+					if sendHook != nil {
+						sent = sendHook(id, msg)
+					} else {
+						sent = h.sendTo(id, msg)
+					}
+					if sent {
+						count++
+					}
 				}
 			}
 		}
@@ -49,7 +61,13 @@ func (s *wsBroadcastStep) Execute(ctx context.Context, triggerData map[string]an
 		}
 		h.mu.RUnlock()
 		for _, id := range ids {
-			if h.sendTo(id, msg) {
+			var sent bool
+			if sendHook != nil {
+				sent = sendHook(id, msg)
+			} else {
+				sent = h.sendTo(id, msg)
+			}
+			if sent {
 				count++
 			}
 		}
