@@ -48,10 +48,6 @@ func (p *wsPlugin) ModuleTypes() []string {
 func (p *wsPlugin) StepTypes() []string {
 	return []string{
 		"step.ws_send",
-		"step.ws_broadcast",
-		"step.ws_room_join",
-		"step.ws_room_leave",
-		"step.ws_room_list",
 		"step.ws_close",
 	}
 }
@@ -90,14 +86,6 @@ func (p *wsPlugin) CreateStep(typeName, name string, config map[string]any) (sdk
 	switch typeName {
 	case "step.ws_send":
 		return newWSSendStep(name, config)
-	case "step.ws_broadcast":
-		return newWSBroadcastStep(name, config)
-	case "step.ws_room_join":
-		return newWSRoomJoinStep(name, config)
-	case "step.ws_room_leave":
-		return newWSRoomLeaveStep(name, config)
-	case "step.ws_room_list":
-		return newWSRoomListStep(name, config)
 	case "step.ws_close":
 		return newWSCloseStep(name, config)
 	default:
