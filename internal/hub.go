@@ -252,21 +252,6 @@ func (h *hub) BroadcastToRoom(room string, msg []byte) int {
 	return count
 }
 
-func (h *hub) broadcastAll(msg []byte, exclude string) {
-	h.mu.RLock()
-	ids := make([]string, 0, len(h.connections))
-	for id := range h.connections {
-		if id != exclude {
-			ids = append(ids, id)
-		}
-	}
-	h.mu.RUnlock()
-
-	for _, id := range ids {
-		h.sendTo(id, msg)
-	}
-}
-
 // closeConnection closes a connection by draining its send channel, which
 // causes writePump to send a WebSocket close frame and exit cleanly.
 // Returns false if the connection does not exist.
