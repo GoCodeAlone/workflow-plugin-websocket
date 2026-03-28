@@ -175,6 +175,7 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	wsConn, err := m.upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		slog.Error("ws upgrade failed", "error", err, "path", r.URL.Path, "remoteAddr", r.RemoteAddr)
 		return
 	}
 
