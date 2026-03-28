@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -205,7 +206,14 @@ func (m *wsServerModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		extra["sessionID"] = sid
 	}
 
-	go callGlobalWSConnectHandler(connID, extra)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("ws connect handler: panic", "connID", connID, "panic", r)
+			}
+		}()
+		callGlobalWSConnectHandler(connID, extra)
+	}()
 	go conn.writePump()
 	go conn.readPump(func(connID string, msgType int, msg []byte) {
 		callGlobalWSMessageHandler(connID, msgType, msg)

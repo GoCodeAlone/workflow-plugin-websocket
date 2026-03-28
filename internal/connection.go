@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 
@@ -23,6 +24,9 @@ type connection struct {
 
 func (c *connection) readPump(onMessage func(connID string, msgType int, msg []byte)) {
 	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("ws readPump: panic", "connID", c.id, "panic", r)
+		}
 		callGlobalWSDisconnectHandler(c.id)
 		c.hub.unregister <- c
 		c.close()

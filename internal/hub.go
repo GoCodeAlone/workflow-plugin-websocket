@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+
 type hub struct {
 	connections    map[string]*connection
 	rooms          map[string]map[string]bool // room -> set of connIDs
@@ -15,6 +16,7 @@ type hub struct {
 	register       chan *connection
 	unregister     chan *connection
 	done           chan struct{}
+	runDone        chan struct{}
 	mu             sync.RWMutex
 	maxMessageSize int64
 	pingPeriod     time.Duration
@@ -29,6 +31,7 @@ func newHub() *hub {
 		register:       make(chan *connection),
 		unregister:     make(chan *connection, 256),
 		done:           make(chan struct{}),
+		runDone:        make(chan struct{}),
 		maxMessageSize: 64 * 1024, // 64KB default
 		pingPeriod:     30 * time.Second,
 		pongWait:       60 * time.Second,
@@ -36,6 +39,12 @@ func newHub() *hub {
 }
 
 func (h *hub) run() {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("ws hub: panic in run loop", "panic", r)
+		}
+		close(h.runDone)
+	}()
 	for {
 		select {
 		case <-h.done:
@@ -65,9 +74,10 @@ func (h *hub) run() {
 	}
 }
 
-// stop signals the hub's run loop to exit.
+// stop signals the hub's run loop to exit and waits for it to finish.
 func (h *hub) stop() {
 	close(h.done)
+	<-h.runDone
 }
 
 // registerSync adds a connection to the hub directly under the mutex, bypassing the
