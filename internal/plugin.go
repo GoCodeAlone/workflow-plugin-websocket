@@ -7,6 +7,10 @@ import (
 	"github.com/GoCodeAlone/workflow/plugin/external/sdk"
 )
 
+// Version is set at build time via -ldflags
+// "-X github.com/GoCodeAlone/workflow-plugin-websocket/internal.Version=X.Y.Z"
+var Version = "dev"
+
 // WSServerInstance is the public interface for the ws.server module,
 // exposing the HTTP handler methods needed for in-process registration.
 type WSServerInstance interface {
@@ -35,7 +39,7 @@ func NewWebSocketPlugin() sdk.PluginProvider {
 func (p *wsPlugin) Manifest() sdk.PluginManifest {
 	return sdk.PluginManifest{
 		Name:        "workflow-plugin-websocket",
-		Version:     "0.1.0",
+		Version:     Version,
 		Author:      "GoCodeAlone",
 		Description: "General-purpose WebSocket support for workflow applications",
 	}
