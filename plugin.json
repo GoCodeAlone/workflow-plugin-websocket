@@ -43,6 +43,12 @@
           "key": "sent",
           "type": "boolean",
           "description": "Whether the message was successfully sent to the connection."
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "description": "Error message when the send failed (e.g. ws.server not initialized, missing connectionId).",
+          "optional": true
         }
       ]
     },
@@ -65,6 +71,12 @@
           "key": "closed",
           "type": "boolean",
           "description": "Whether the connection was found and closed."
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "description": "Error message when the close failed (e.g. ws.server not initialized).",
+          "optional": true
         }
       ]
     }
