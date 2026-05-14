@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package workflow.plugin.websocket.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/GoCodeAlone/workflow-plugin-websocket/gen;websocketv1";
+
+// WSServerConfig is the typed config for the ws.server module.
+// Fields mirror the internal wsServerModule config keys (camelCase in YAML).
+message WSServerConfig {
+  // path is the HTTP path for the WebSocket upgrade endpoint (default: /ws).
+  string path = 1;
+  // max_connections is the maximum number of concurrent WebSocket connections (default: 1000).
+  int32 max_connections = 2;
+  // ping_interval is the duration between server-initiated pings (e.g. "30s"). Default: 30s.
+  string ping_interval = 3;
+  // pong_wait is the time to wait for a pong reply before disconnecting (e.g. "60s").
+  string pong_wait = 4;
+  // max_message_size is the maximum inbound message size in bytes (default: 65536).
+  int64 max_message_size = 5;
+  // auth_required, when true, requires an authenticated session before accepting connections.
+  bool auth_required = 6;
+}
+
+// WSSendConfig is the typed config for step.ws_send.
+message WSSendConfig {
+  // connection_id is the UUID of the WebSocket connection to send the message to.
+  string connection_id = 1;
+  // message is the text payload to deliver.
+  string message = 2;
+}
+
+// WSSendInput carries optional runtime overrides for step.ws_send.
+message WSSendInput {
+  google.protobuf.Struct data = 1;
+}
+
+// WSSendOutput is the result of step.ws_send.
+message WSSendOutput {
+  // sent is true when the message was delivered to the connection.
+  bool sent = 1;
+  // error is populated when the send failed (ws.server not initialized, missing connectionId).
+  string error = 2;
+}
+
+// WSCloseConfig is the typed config for step.ws_close.
+message WSCloseConfig {
+  // connection_id is the UUID of the WebSocket connection to close.
+  string connection_id = 1;
+}
+
+// WSCloseInput carries optional runtime overrides for step.ws_close.
+message WSCloseInput {
+  google.protobuf.Struct data = 1;
+}
+
+// WSCloseOutput is the result of step.ws_close.
+message WSCloseOutput {
+  // closed is true when the connection was found and closed.
+  bool closed = 1;
+  // error is populated when the close failed (ws.server not initialized).
+  string error = 2;
+}
+
+// WebSocketTriggerConfig is the typed config for the websocket trigger type.
+// No required fields — the trigger attaches to the global ws.server hub automatically.
+message WebSocketTriggerConfig {
+  // reserved for future extension
+}

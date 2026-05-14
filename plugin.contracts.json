@@ -1,0 +1,33 @@
+{
+  "version": "1",
+  "contracts": [
+    {
+      "kind": "module",
+      "type": "ws.server",
+      "mode": "strict_proto",
+      "config": "workflow.plugin.websocket.v1.WSServerConfig"
+    },
+    {
+      "kind": "step",
+      "type": "step.ws_send",
+      "mode": "strict_proto",
+      "config": "workflow.plugin.websocket.v1.WSSendConfig",
+      "input": "workflow.plugin.websocket.v1.WSSendInput",
+      "output": "workflow.plugin.websocket.v1.WSSendOutput"
+    },
+    {
+      "kind": "step",
+      "type": "step.ws_close",
+      "mode": "strict_proto",
+      "config": "workflow.plugin.websocket.v1.WSCloseConfig",
+      "input": "workflow.plugin.websocket.v1.WSCloseInput",
+      "output": "workflow.plugin.websocket.v1.WSCloseOutput"
+    },
+    {
+      "kind": "trigger",
+      "type": "websocket",
+      "mode": "strict_proto",
+      "config": "workflow.plugin.websocket.v1.WebSocketTriggerConfig"
+    }
+  ]
+}
