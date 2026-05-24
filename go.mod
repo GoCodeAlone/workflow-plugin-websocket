@@ -3,7 +3,7 @@ module github.com/GoCodeAlone/workflow-plugin-websocket
 go 1.26.1
 
 require (
-	github.com/GoCodeAlone/workflow v0.62.0
+	github.com/GoCodeAlone/workflow v0.64.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
