@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	sdk.Serve(internal.NewWebSocketPlugin())
+	sdk.Serve(internal.NewWebSocketPlugin(), sdk.WithBuildVersion(sdk.ResolveBuildVersion(internal.Version)))
 }

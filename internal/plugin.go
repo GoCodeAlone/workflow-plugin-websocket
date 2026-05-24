@@ -9,7 +9,7 @@ import (
 
 // Version is set at build time via -ldflags
 // "-X github.com/GoCodeAlone/workflow-plugin-websocket/internal.Version=X.Y.Z"
-var Version = "dev"
+var Version = "0.0.0"
 
 // WSServerInstance is the public interface for the ws.server module,
 // exposing the HTTP handler methods needed for in-process registration.
