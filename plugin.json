@@ -1,96 +1,96 @@
 {
-  "name": "workflow-plugin-websocket",
-  "version": "0.0.0",
-  "author": "GoCodeAlone",
-  "description": "General-purpose WebSocket support for workflow applications",
-  "type": "external",
-  "tier": "community",
-  "license": "MIT",
-  "repository": "https://github.com/GoCodeAlone/workflow-plugin-websocket",
-  "homepage": "https://github.com/GoCodeAlone/workflow-plugin-websocket",
-  "minEngineVersion": "0.51.7",
-  "keywords": [
-    "websocket",
-    "ws",
-    "realtime",
-    "streaming"
-  ],
-  "capabilities": {
-    "moduleTypes": [
-      "ws.server"
+    "name": "workflow-plugin-websocket",
+    "version": "0.0.0",
+    "author": "GoCodeAlone",
+    "description": "General-purpose WebSocket support for workflow applications",
+    "type": "external",
+    "tier": "community",
+    "license": "MIT",
+    "repository": "https://github.com/GoCodeAlone/workflow-plugin-websocket",
+    "homepage": "https://github.com/GoCodeAlone/workflow-plugin-websocket",
+    "minEngineVersion": "0.51.7",
+    "keywords": [
+        "websocket",
+        "ws",
+        "realtime",
+        "streaming"
     ],
-    "stepTypes": [
-      "step.ws_send",
-      "step.ws_close"
-    ],
-    "triggerTypes": [
-      "websocket"
-    ]
-  },
-  "stepSchemas": [
-    {
-      "type": "step.ws_send",
-      "plugin": "workflow-plugin-websocket",
-      "description": "Send a text message to a WebSocket connection by connection ID.",
-      "configFields": [
-        {
-          "key": "connectionId",
-          "label": "Connection ID",
-          "type": "string",
-          "description": "The unique identifier of the WebSocket connection to send the message to.",
-          "required": true,
-          "placeholder": "{{ .connectionId }}"
-        },
-        {
-          "key": "message",
-          "label": "Message",
-          "type": "string",
-          "description": "The text message to send to the WebSocket connection.",
-          "required": true,
-          "placeholder": "Hello, world!"
-        }
-      ],
-      "outputs": [
-        {
-          "key": "sent",
-          "type": "boolean",
-          "description": "Whether the message was successfully sent to the connection."
-        },
-        {
-          "key": "error",
-          "type": "string",
-          "description": "Error message when the send failed (e.g. ws.server not initialized, missing connectionId).",
-          "optional": true
-        }
-      ]
+    "capabilities": {
+        "moduleTypes": [
+            "ws.server"
+        ],
+        "stepTypes": [
+            "step.ws_send",
+            "step.ws_close"
+        ],
+        "triggerTypes": [
+            "websocket"
+        ]
     },
-    {
-      "type": "step.ws_close",
-      "plugin": "workflow-plugin-websocket",
-      "description": "Close a WebSocket connection by connection ID.",
-      "configFields": [
+    "stepSchemas": [
         {
-          "key": "connectionId",
-          "label": "Connection ID",
-          "type": "string",
-          "description": "The unique identifier of the WebSocket connection to close.",
-          "required": true,
-          "placeholder": "{{ .connectionId }}"
-        }
-      ],
-      "outputs": [
-        {
-          "key": "closed",
-          "type": "boolean",
-          "description": "Whether the connection was found and closed."
+            "type": "step.ws_send",
+            "plugin": "workflow-plugin-websocket",
+            "description": "Send a text message to a WebSocket connection by connection ID.",
+            "configFields": [
+                {
+                    "key": "connectionId",
+                    "label": "Connection ID",
+                    "type": "string",
+                    "description": "The unique identifier of the WebSocket connection to send the message to.",
+                    "required": true,
+                    "placeholder": "{{ .connectionId }}"
+                },
+                {
+                    "key": "message",
+                    "label": "Message",
+                    "type": "string",
+                    "description": "The text message to send to the WebSocket connection.",
+                    "required": true,
+                    "placeholder": "Hello, world!"
+                }
+            ],
+            "outputs": [
+                {
+                    "key": "sent",
+                    "type": "boolean",
+                    "description": "Whether the message was successfully sent to the connection."
+                },
+                {
+                    "key": "error",
+                    "type": "string",
+                    "description": "Error message when the send failed (e.g. ws.server not initialized, missing connectionId).",
+                    "optional": true
+                }
+            ]
         },
         {
-          "key": "error",
-          "type": "string",
-          "description": "Error message when the close failed (e.g. ws.server not initialized).",
-          "optional": true
+            "type": "step.ws_close",
+            "plugin": "workflow-plugin-websocket",
+            "description": "Close a WebSocket connection by connection ID.",
+            "configFields": [
+                {
+                    "key": "connectionId",
+                    "label": "Connection ID",
+                    "type": "string",
+                    "description": "The unique identifier of the WebSocket connection to close.",
+                    "required": true,
+                    "placeholder": "{{ .connectionId }}"
+                }
+            ],
+            "outputs": [
+                {
+                    "key": "closed",
+                    "type": "boolean",
+                    "description": "Whether the connection was found and closed."
+                },
+                {
+                    "key": "error",
+                    "type": "string",
+                    "description": "Error message when the close failed (e.g. ws.server not initialized).",
+                    "optional": true
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
